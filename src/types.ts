@@ -1,4 +1,23 @@
-export type AssetKind = "video" | "image" | "audio";
+export type AssetKind = "video" | "image" | "audio" | "text";
+
+export interface TextStyle {
+  text: string;
+  font: string;
+  size: number;
+  weight: number;
+  color: string;
+  align: "left" | "center" | "right";
+  lineHeight: number;
+  /** "" = no background box */
+  bg: string;
+  bgPad: number;
+  bgRadius: number;
+  stroke: number;
+  strokeColor: string;
+  shadow: number;
+}
+
+export type Anim = "none" | "fade" | "slide-up" | "slide-down" | "slide-left" | "slide-right" | "pop";
 
 export interface Asset {
   id: string;
@@ -13,6 +32,8 @@ export interface Asset {
   thumb?: string;
   peaks?: number[];
   voice?: { text: string; voiceId: string; modelId: string };
+  /** kind === "text": width/height are the measured block size at scale 1 */
+  text?: TextStyle;
 }
 
 export type TrackKind = "video" | "audio" | "background";
@@ -51,6 +72,9 @@ export interface Clip {
   /** transition from the previous clip on the track, over the first `transitionFrames` */
   transition: "none" | "dissolve" | "fade";
   transitionFrames: number;
+  animIn: Anim;
+  animOut: Anim;
+  animFrames: number;
 }
 
 export const CLIP_STYLE_DEFAULTS = {
@@ -61,6 +85,9 @@ export const CLIP_STYLE_DEFAULTS = {
   shadowOpacity: 0.6,
   transition: "none" as const,
   transitionFrames: 15,
+  animIn: "none" as const,
+  animOut: "none" as const,
+  animFrames: 12,
 };
 
 export interface VoiceSettings {

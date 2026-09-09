@@ -1,10 +1,11 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { projectEnd } from "@/store";
 import { drawClip, fitBox } from "./decor";
-import { alphaAt, extension } from "./fx";
+import { alphaAt, animatedBox, extension } from "./fx";
+import { renderText, wrapWidth } from "./text";
 import type { Asset, Clip, Project } from "@/types";
 
-type El = HTMLVideoElement | HTMLAudioElement | HTMLImageElement;
+type El = HTMLVideoElement | HTMLAudioElement | HTMLImageElement | HTMLCanvasElement;
 
 /**
  * Canvas compositor + media scheduler for preview. One media element per clip;
@@ -16,6 +17,7 @@ export class Player {
   playing = false;
   onFrame?: (frame: number) => void;
   private els = new Map<string, El>();
+  private textKeys = new Map<string, string>();
   private raf = 0;
   private t0 = 0;
   private f0 = 0;
@@ -23,8 +25,16 @@ export class Player {
 
   constructor(private canvas: HTMLCanvasElement) {}
 
-  private el(clip: Clip, asset: Asset): El {
+  private el(clip: Clip, asset: Asset, p: Project): El {
     let el = this.els.get(clip.id);
+    if (asset.kind === "text") {
+      const key = JSON.stringify(asset.text) + clip.scale + p.width;
+      if (el && this.textKeys.get(clip.id) === key) return el;
+      el = renderText(asset.text!, Math.min(4, Math.max(0.25, clip.scale)), wrapWidth(p.width));
+      this.els.set(clip.id, el);
+      this.textKeys.set(clip.id, key);
+      return el;
+    }
     if (el) return el;
     const src = convertFileSrc(asset.path);
     const rerender = () => {
@@ -67,17 +77,17 @@ export class Player {
       for (const c of visible) {
         const a = p.assets[c.assetId];
         if (!a) continue;
-        const el = this.el(c, a);
+        const el = this.el(c, a, p);
         if (el instanceof HTMLVideoElement) {
           const t = (frame - c.start + c.inPoint) / p.fps;
           if (!this.playing && Math.abs(el.currentTime - t) > 1 / p.fps / 2) el.currentTime = t;
           if (el.readyState < 2) continue;
         } else if (el instanceof HTMLImageElement) {
           if (!el.complete || !el.naturalWidth) continue;
-        } else continue;
+        } else if (!(el instanceof HTMLCanvasElement)) continue;
         const box = fitBox(p, c, a);
         const alpha = alphaAt(p, c, frame);
-        if (box && alpha > 0) drawClip(ctx, el, box, alpha === 1 ? c : { ...c, opacity: c.opacity * alpha }, 1);
+        if (box && alpha > 0) drawClip(ctx, el, animatedBox(c, box, frame), alpha === 1 ? c : { ...c, opacity: c.opacity * alpha }, 1);
       }
     }
   }
@@ -88,8 +98,8 @@ export class Player {
     for (const c of Object.values(p.clips)) {
       const a = p.assets[c.assetId];
       const track = p.tracks.find((t) => t.id === c.trackId);
-      if (!a || !track || a.kind === "image") continue;
-      const el = this.el(c, a) as HTMLMediaElement;
+      if (!a || !track || a.kind === "image" || a.kind === "text") continue;
+      const el = this.el(c, a, p) as HTMLMediaElement;
       if (!active.has(c.id) || track.muted) {
         if (!el.paused) el.pause();
         continue;
@@ -145,6 +155,7 @@ export class Player {
       el.removeAttribute("src");
     }
     this.els.delete(id);
+    this.textKeys.delete(id);
   }
 
   destroy() {

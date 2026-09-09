@@ -7,6 +7,22 @@ import { useStore } from "@/store";
 import type { Clip } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { predecessor } from "@/lib/fx";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { AlignCenter, AlignLeft, AlignRight } from "lucide-react";
+import { FONTS, TEMPLATES, updateText } from "@/lib/text";
+import type { Anim, TextStyle } from "@/types";
+import { cn } from "@/lib/utils";
+
+const ANIMS: [Anim, string][] = [
+  ["none", "None"],
+  ["fade", "Fade"],
+  ["pop", "Pop"],
+  ["slide-up", "Slide up"],
+  ["slide-down", "Slide down"],
+  ["slide-left", "Slide left"],
+  ["slide-right", "Slide right"],
+];
 
 export default function Inspector() {
   const project = useStore((s) => s.project)!;
@@ -113,6 +129,22 @@ export default function Inspector() {
           <SliderRow label="X" value={clip.x} min={-project.width} max={project.width} step={1} fmt={(v) => `${v}px`} onChange={(v) => set("x", v)} />
           <SliderRow label="Y" value={clip.y} min={-project.height} max={project.height} step={1} fmt={(v) => `${v}px`} onChange={(v) => set("y", v)} />
           <SliderRow label="Opacity" value={clip.opacity} min={0} max={1} step={0.01} fmt={(v) => `${Math.round(v * 100)}%`} onChange={(v) => set("opacity", v)} />
+        </Section>
+      )}
+
+      {asset.text && <TextSection assetId={asset.id} s={asset.text} />}
+
+      {isVideoTrack && (
+        <Section title="Animation">
+          <Row label="In">
+            <AnimSelect value={clip.animIn} onChange={(v) => set("animIn", v)} />
+          </Row>
+          <Row label="Out">
+            <AnimSelect value={clip.animOut} onChange={(v) => set("animOut", v)} />
+          </Row>
+          {(clip.animIn !== "none" || clip.animOut !== "none") && (
+            <SliderRow label="Duration" value={clip.animFrames / fps} min={0.1} max={Math.min(3, clip.duration / fps / 2)} step={0.05} fmt={(v) => `${v.toFixed(2)}s`} onChange={(v) => set("animFrames", Math.round(v * fps))} />
+          )}
         </Section>
       )}
 
@@ -227,5 +259,103 @@ function SliderRow({
       </div>
       <Slider value={[value]} min={min} max={max} step={step} onValueChange={(v) => onChange(Array.isArray(v) ? v[0] : (v as number))} />
     </div>
+  );
+}
+
+function AnimSelect({ value, onChange }: { value: Anim; onChange: (v: Anim) => void }) {
+  return (
+    <Select value={value} onValueChange={(v) => v && onChange(v as Anim)}>
+      <SelectTrigger className="h-7 w-36 text-xs">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {ANIMS.map(([v, l]) => (
+          <SelectItem key={v} value={v}>
+            {l}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function TextSection({ assetId, s }: { assetId: string; s: TextStyle }) {
+  const set = (patch: Partial<TextStyle>) => updateText(assetId, patch);
+  const isHex = (c: string) => /^#[0-9a-f]{6}$/i.test(c);
+  return (
+    <>
+      <Section title="Text">
+        <Textarea value={s.text} onChange={(e) => set({ text: e.target.value })} className="min-h-20 text-sm" />
+        <div className="grid grid-cols-3 gap-1.5">
+          {TEMPLATES.map((t) => (
+            <Button key={t.name} variant="secondary" size="xs" className="h-7 justify-start truncate px-2" onClick={() => set(t.style)}>
+              {t.name}
+            </Button>
+          ))}
+        </div>
+      </Section>
+      <Section title="Font">
+        <Select value={s.font} onValueChange={(v) => v && set({ font: v })}>
+          <SelectTrigger className="h-7 w-full text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {FONTS.map((f) => (
+              <SelectItem key={f} value={f} style={{ fontFamily: f }}>
+                {f}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
+          <Select value={String(s.weight)} onValueChange={(v) => v && set({ weight: Number(v) })}>
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[300, 400, 500, 600, 700, 800, 900].map((w) => (
+                <SelectItem key={w} value={String(w)}>
+                  {w}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="flex rounded-md border">
+            {(["left", "center", "right"] as const).map((a) => {
+              const I = a === "left" ? AlignLeft : a === "center" ? AlignCenter : AlignRight;
+              return (
+                <button key={a} className={cn("p-1.5 hover:bg-accent", s.align === a && "bg-accent text-primary")} onClick={() => set({ align: a })}>
+                  <I className="size-3.5" />
+                </button>
+              );
+            })}
+          </div>
+          <input type="color" value={isHex(s.color) ? s.color : "#ffffff"} onChange={(e) => set({ color: e.target.value })} className="h-7 w-9 cursor-pointer rounded border bg-transparent" title="Text color" />
+        </div>
+        <SliderRow label="Size" value={s.size} min={12} max={400} step={1} fmt={(v) => `${v}px`} onChange={(v) => set({ size: v })} />
+        <SliderRow label="Line height" value={s.lineHeight} min={0.8} max={2} step={0.05} fmt={(v) => v.toFixed(2)} onChange={(v) => set({ lineHeight: v })} />
+      </Section>
+      <Section title="Background & effects">
+        <Row label="Background">
+          <div className="flex items-center gap-2">
+            <input type="color" value={isHex(s.bg) ? s.bg : "#000000"} onChange={(e) => set({ bg: e.target.value })} className="h-6 w-9 cursor-pointer rounded border bg-transparent" />
+            <Switch checked={!!s.bg} onCheckedChange={(c) => set({ bg: c ? "#000000" : "" })} />
+          </div>
+        </Row>
+        {s.bg && (
+          <>
+            <SliderRow label="Padding" value={s.bgPad} min={0} max={120} step={1} fmt={(v) => `${v}px`} onChange={(v) => set({ bgPad: v })} />
+            <SliderRow label="Radius" value={s.bgRadius} min={0} max={100} step={1} fmt={(v) => `${v}px`} onChange={(v) => set({ bgRadius: v })} />
+          </>
+        )}
+        <SliderRow label="Outline" value={s.stroke} min={0} max={30} step={1} fmt={(v) => `${v}px`} onChange={(v) => set({ stroke: v })} />
+        {s.stroke > 0 && (
+          <Row label="Outline color">
+            <input type="color" value={s.strokeColor} onChange={(e) => set({ strokeColor: e.target.value })} className="h-6 w-9 cursor-pointer rounded border bg-transparent" />
+          </Row>
+        )}
+        <SliderRow label="Shadow" value={s.shadow} min={0} max={100} step={1} fmt={(v) => (v ? `${v}px` : "off")} onChange={(v) => set({ shadow: v })} />
+      </Section>
+    </>
   );
 }

@@ -82,7 +82,7 @@ export function findSlot(p: Project, trackId: string, start: number, duration: n
 }
 
 export function clipDuration(p: Project, asset: Asset) {
-  return asset.kind === "image" ? IMAGE_SECONDS * p.fps : asset.duration;
+  return asset.kind === "image" || asset.kind === "text" ? IMAGE_SECONDS * p.fps : asset.duration;
 }
 
 export function addClip(assetId: string, trackId: string, start: number): string | null {
@@ -163,7 +163,7 @@ export function trimClip(clipId: string, side: "l" | "r", edge: number) {
     const c = p.clips[clipId];
     if (!c) return;
     const asset = p.assets[c.assetId];
-    const maxLen = asset.kind === "image" ? Infinity : asset.duration;
+    const maxLen = asset.kind === "video" || asset.kind === "audio" ? asset.duration : Infinity;
     if (side === "l") {
       const ns = Math.max(0, Math.min(edge, c.start + c.duration - 1));
       const delta = ns - c.start;

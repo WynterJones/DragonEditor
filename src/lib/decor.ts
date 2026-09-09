@@ -10,6 +10,11 @@ export interface Box {
 /** Where a clip's media lands in the project frame (project px): fit inside W*scale × H*scale, centered, offset by x/y. */
 export function fitBox(p: Project, c: Clip, a: Asset): Box | null {
   if (!a.width || !a.height) return null;
+  if (a.kind === "text") {
+    const width = a.width * c.scale;
+    const height = a.height * c.scale;
+    return { left: (p.width - width) / 2 + c.x, top: (p.height - height) / 2 + c.y, width, height };
+  }
   const f = Math.min((p.width * c.scale) / a.width, (p.height * c.scale) / a.height);
   const width = a.width * f;
   const height = a.height * f;

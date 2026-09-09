@@ -77,6 +77,7 @@ const EXT: Record<AssetKind, string[]> = {
   video: ["mp4", "mov", "m4v", "webm", "mkv", "avi"],
   image: ["png", "jpg", "jpeg", "webp", "gif", "bmp"],
   audio: ["mp3", "wav", "aac", "m4a", "flac", "ogg", "aiff", "aif"],
+  text: [],
 };
 export const ALL_EXT = Object.values(EXT).flat();
 

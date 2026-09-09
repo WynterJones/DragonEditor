@@ -24,7 +24,8 @@
 DragonEditor is not a Premiere clone. It does one workflow extremely well: producing **narrated video** — tutorials, explainers, faceless content, marketing clips — where the voice is *written*, not recorded.
 
 - **Script → voice → timeline.** Paste an ElevenLabs voice ID (or pick from your voices), write text, hit Generate. The audio lands on the timeline as a clip you can move, trim and split like anything else.
-- **Real timeline editing.** Unlimited video and audio tracks, drag/trim/split/snap, undo/redo, frame-accurate playhead.
+- **Real timeline editing.** Unlimited video and audio tracks, drag/trim/split/snap, undo/redo, frame-accurate playhead. Move and scale clips directly on the preview.
+- **Text, styles and motion.** Text clips with style templates, any font, outline/shadow/background box; fade, slide and pop animations; cross-dissolve and fade-through-black transitions; rounded corners, borders and drop shadows on any clip.
 - **Background music that ducks itself.** A dedicated music track with sidechain ducking under the voice.
 - **High-quality export.** H.264 or H.265 MP4 via a bundled FFmpeg — not a screen recording of a canvas.
 - **Projects are folders.** `MyVideo.dragon/` with `project.json` + `assets/` + `voice/`. Zip it, move it, version it.

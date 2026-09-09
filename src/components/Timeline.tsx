@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { Lock, LockOpen, Plus, Scissors, Volume2, VolumeX, ZoomIn, ZoomOut } from "lucide-react";
+import { Lock, LockOpen, Plus, Scissors, Type, Volume2, VolumeX, ZoomIn, ZoomOut } from "lucide-react";
+import { addText } from "@/lib/text";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { addTrack, moveClip, projectEnd, splitAtPlayhead, trackClips, trimClip, useStore } from "@/store";
@@ -140,6 +141,9 @@ export default function Timeline() {
         <Button variant="ghost" size="xs" onClick={() => addTrack("audio")}>
           <Plus /> Audio
         </Button>
+        <Button variant="ghost" size="xs" onClick={addText} title="Add a text clip at the playhead">
+          <Type /> Text
+        </Button>
         <div className="mx-2 h-4 w-px bg-border" />
         <Button variant="ghost" size="xs" onClick={splitAtPlayhead} title="Split at playhead (S)">
           <Scissors /> Split
@@ -276,7 +280,7 @@ function ClipView({
   onUp: () => void;
 }) {
   const isVideo = track.kind === "video";
-  const color = asset.voice ? "bg-emerald-950/80 border-emerald-500/40" : isVideo ? "bg-sky-950/70 border-sky-500/40" : track.kind === "background" ? "bg-yellow-950/60 border-yellow-500/40" : "bg-teal-950/70 border-teal-500/40";
+  const color = asset.voice ? "bg-emerald-950/80 border-emerald-500/40" : asset.kind === "text" ? "bg-violet-950/70 border-violet-500/40" : isVideo ? "bg-sky-950/70 border-sky-500/40" : track.kind === "background" ? "bg-yellow-950/60 border-yellow-500/40" : "bg-teal-950/70 border-teal-500/40";
   return (
     <div
       className={cn(

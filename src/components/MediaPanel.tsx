@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { FileAudio, Film, Image as ImageIcon, Mic, Plus, Trash2 } from "lucide-react";
+import { FileAudio, Film, Image as ImageIcon, Mic, Plus, Trash2, Type } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -15,7 +15,7 @@ export default function MediaPanel() {
   const project = useStore((s) => s.project)!;
   const update = useStore((s) => s.update);
   const [busy, setBusy] = useState(false);
-  const assets = Object.values(project.assets).filter((a) => !a.voice);
+  const assets = Object.values(project.assets).filter((a) => !a.voice && a.kind !== "text");
 
   const pick = async () => {
     const files = await open({ multiple: true, filters: [{ name: "Media", extensions: ALL_EXT }] });
@@ -60,7 +60,7 @@ export default function MediaPanel() {
   );
 }
 
-const ICON = { video: Film, image: ImageIcon, audio: FileAudio };
+const ICON = { video: Film, image: ImageIcon, audio: FileAudio, text: Type };
 
 export function AssetCard({ asset, fps }: { asset: Asset; fps: number }) {
   const ghost = useRef<HTMLDivElement | null>(null);
