@@ -59,12 +59,8 @@ export default function Preview() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex min-h-0 flex-1 items-center justify-center p-4">
-        <canvas
-          ref={canvasRef}
-          className="max-h-full max-w-full rounded-sm shadow-[0_0_0_1px_#222,0_20px_60px_rgba(0,0,0,0.6)]"
-          style={{ aspectRatio: `${project.width} / ${project.height}` }}
-        />
+      <div className="min-h-0 min-w-0 flex-1 p-4">
+        <canvas ref={canvasRef} className="h-full w-full object-contain" />
       </div>
       <div className="flex h-12 items-center justify-center gap-1 border-t bg-[var(--surface-1)]">
         <span className="mono w-28 text-right text-xs text-primary">{timecode(playhead, project.fps)}</span>

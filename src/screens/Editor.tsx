@@ -97,7 +97,7 @@ export default function Editor() {
   };
 
   return (
-    <div className="grid h-screen grid-rows-[44px_minmax(0,1fr)_minmax(220px,32vh)] bg-background">
+    <div className="grid h-screen w-screen overflow-hidden grid-cols-[minmax(0,1fr)] grid-rows-[44px_minmax(0,1fr)_minmax(220px,32vh)] bg-background">
       <header data-tauri-drag-region className="flex items-center gap-2 border-b bg-[var(--surface-1)] pr-3 pl-[84px]">
         <Button variant="ghost" size="icon-sm" onClick={close} title="Back to projects">
           <ChevronLeft />
@@ -120,7 +120,7 @@ export default function Editor() {
         </Button>
       </header>
 
-      <div className="grid min-h-0 grid-cols-[300px_minmax(0,1fr)_272px]">
+      <div className="grid min-h-0 min-w-0 grid-cols-[300px_minmax(0,1fr)_272px]">
         <aside className="min-h-0 border-r bg-[var(--surface-1)]">
           <Tabs defaultValue="media" className="flex h-full flex-col gap-0">
             <TabsList className="m-2 grid grid-cols-2">
@@ -143,7 +143,7 @@ export default function Editor() {
         </aside>
       </div>
 
-      <section className="min-h-0 border-t bg-[var(--surface-1)]">
+      <section className="min-h-0 min-w-0 border-t bg-[var(--surface-1)]">
         <Timeline />
       </section>
 
