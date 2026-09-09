@@ -102,7 +102,7 @@ export class Player {
       const track = p.tracks.find((t) => t.id === c.trackId);
       if (!a || !track || a.kind === "image" || a.kind === "text") continue;
       const el = this.el(c, a, p) as HTMLMediaElement;
-      if (!active.has(c.id) || track.muted) {
+      if (!active.has(c.id) || track.muted || el.ended) {
         if (!el.paused) el.pause();
         continue;
       }
@@ -114,8 +114,8 @@ export class Player {
         el.currentTime = t;
         this.lastSeek.set(c.id, now);
         void el.play().catch(() => {});
-      } else if (c.id !== this.clockId && Math.abs(el.currentTime - t) > 0.35 && now - (this.lastSeek.get(c.id) ?? 0) > 1000) {
-        // ponytail: 1s cooldown between corrective seeks; a seek stalls WebKit decoding briefly
+      } else if (c.id !== this.clockId && Math.abs(el.currentTime - t) > 0.5 && now - (this.lastSeek.get(c.id) ?? 0) > 2000) {
+        // ponytail: media plays at 1x so drift doesn't grow; only fix gross offsets, rarely — each seek is an audible skip
         el.currentTime = t;
         this.lastSeek.set(c.id, now);
       }
@@ -147,6 +147,11 @@ export class Player {
     this.t0 = performance.now();
     this.f0 = frame;
     this.clockId = null;
+    // warm every media element now so clips don't start late when they become active
+    for (const c of Object.values(p.clips)) {
+      const a = p.assets[c.assetId];
+      if (a && a.kind !== "image" && a.kind !== "text") this.el(c, a, p);
+    }
     let last = -1;
     const loop = () => {
       const p2 = this.last?.p ?? p;
