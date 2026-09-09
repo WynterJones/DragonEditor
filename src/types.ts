@@ -48,9 +48,20 @@ export interface Clip {
   borderColor: string;
   shadow: number;
   shadowOpacity: number;
+  /** transition from the previous clip on the track, over the first `transitionFrames` */
+  transition: "none" | "dissolve" | "fade";
+  transitionFrames: number;
 }
 
-export const CLIP_STYLE_DEFAULTS = { radius: 0, border: 0, borderColor: "#ffffff", shadow: 0, shadowOpacity: 0.6 };
+export const CLIP_STYLE_DEFAULTS = {
+  radius: 0,
+  border: 0,
+  borderColor: "#ffffff",
+  shadow: 0,
+  shadowOpacity: 0.6,
+  transition: "none" as const,
+  transitionFrames: 15,
+};
 
 export interface VoiceSettings {
   voiceId: string;

@@ -193,7 +193,7 @@ export function splitAtPlayhead() {
     );
     for (const c of targets) {
       const off = playhead - c.start;
-      const right: Clip = { ...c, id: id(), start: playhead, inPoint: c.inPoint + off, duration: c.duration - off, fadeIn: 0 };
+      const right: Clip = { ...c, id: id(), start: playhead, inPoint: c.inPoint + off, duration: c.duration - off, fadeIn: 0, transition: "none" };
       c.duration = off;
       c.fadeOut = 0;
       p.clips[right.id] = right;

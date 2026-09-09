@@ -1,6 +1,7 @@
 import { projectEnd, trackClips } from "@/store";
 import type { Clip, Project, Track } from "@/types";
 import { decorMargin, fitBox } from "./decor";
+import { extension, fadeFrames } from "./fx";
 
 export interface ExportOpts {
   out: string;
@@ -42,8 +43,9 @@ export function buildArgs(p: Project, o: ExportOpts): string[] {
       "aformat=sample_rates=48000:channel_layouts=stereo",
       `volume=${(c.volume * t.volume).toFixed(3)}`,
     ];
-    if (c.fadeIn > 0) chain.push(`afade=t=in:st=0:d=${sec(c.fadeIn)}`);
-    if (c.fadeOut > 0) chain.push(`afade=t=out:st=${sec(c.duration - c.fadeOut)}:d=${sec(c.fadeOut)}`);
+    const fd = fadeFrames(p, c);
+    if (fd.in > 0) chain.push(`afade=t=in:st=0:d=${sec(fd.in)}`);
+    if (fd.out > 0) chain.push(`afade=t=out:st=${sec(c.duration - fd.out)}:d=${sec(fd.out)}`);
     const ms = Math.round((c.start / fps) * 1000);
     chain.push(`adelay=${ms}|${ms}`);
     f.push(`[${idx}:a]${chain.join(",")}[a${idx}]`);
@@ -60,8 +62,10 @@ export function buildArgs(p: Project, o: ExportOpts): string[] {
       if (!a) continue;
       const idx = n++;
       const st = sec(c.start);
-      const en = sec(c.start + c.duration);
-      if (a.kind === "image") inputs.push("-loop", "1", "-framerate", String(fps), "-t", sec(c.duration), "-i", a.path);
+      const ext = extension(p, c);
+      const len = sec(c.duration + ext);
+      const en = sec(c.start + c.duration + ext);
+      if (a.kind === "image") inputs.push("-loop", "1", "-framerate", String(fps), "-t", len, "-i", a.path);
       else inputs.push("-ss", sec(c.inPoint), "-i", a.path);
       const box = fitBox(p, c, a) ?? { left: 0, top: 0, width: p.width, height: p.height };
       const dw = even(box.width * sx);
@@ -70,7 +74,7 @@ export function buildArgs(p: Project, o: ExportOpts): string[] {
       const top = Math.round(box.top * sx);
       const d = o.decor?.[c.id];
       const still = (path: string) => {
-        inputs.push("-loop", "1", "-framerate", String(fps), "-t", sec(c.duration), "-i", path);
+        inputs.push("-loop", "1", "-framerate", String(fps), "-t", len, "-i", path);
         return n++;
       };
       if (d?.frame) {
@@ -81,14 +85,19 @@ export function buildArgs(p: Project, o: ExportOpts): string[] {
         f.push(`[${vlabel}][f${idx}]overlay=x=${left - m}:y=${top - m}:enable='between(t,${st},${en})':eof_action=pass[v${vi}]`);
         vlabel = `v${vi}`;
       }
-      let chain = `[${idx}:v]trim=duration=${sec(c.duration)},setpts=PTS-STARTPTS,fps=${fps},scale=${dw}:${dh}`;
+      let chain = `[${idx}:v]trim=duration=${len},setpts=PTS-STARTPTS,fps=${fps},scale=${dw}:${dh}`;
+      if (ext > 0 && a.kind === "video") chain += `,tpad=stop_mode=clone:stop_duration=${sec(ext)}`;
+      const fd = fadeFrames(p, c);
+      const fades =
+        (fd.in > 0 ? `,fade=t=in:st=0:d=${sec(fd.in)}:alpha=1` : "") +
+        (fd.out > 0 ? `,fade=t=out:st=${sec(c.duration - fd.out)}:d=${sec(fd.out)}:alpha=1` : "");
       if (d?.mask) {
         const mi = still(d.mask);
         f.push(`[${mi}:v]format=gray[mk${idx}]`);
         f.push(`${chain}[cs${idx}]`);
         chain = `[cs${idx}][mk${idx}]alphamerge`;
       }
-      f.push(`${chain},format=rgba,colorchannelmixer=aa=${c.opacity.toFixed(3)},format=yuva420p,setpts=PTS+${st}/TB[c${idx}]`);
+      f.push(`${chain},format=rgba,colorchannelmixer=aa=${c.opacity.toFixed(3)},format=yuva420p${fades},setpts=PTS+${st}/TB[c${idx}]`);
       vi++;
       f.push(`[${vlabel}][c${idx}]overlay=x=${left}:y=${top}:enable='between(t,${st},${en})':eof_action=pass[v${vi}]`);
       vlabel = `v${vi}`;

@@ -1,6 +1,7 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { projectEnd } from "@/store";
 import { drawClip, fitBox } from "./decor";
+import { alphaAt, extension } from "./fx";
 import type { Asset, Clip, Project } from "@/types";
 
 type El = HTMLVideoElement | HTMLAudioElement | HTMLImageElement;
@@ -58,10 +59,12 @@ export class Player {
     ctx.fillRect(0, 0, p.width, p.height);
     for (const id of this.els.keys()) if (!p.clips[id]) this.drop(id);
 
-    const active = this.active(p, frame);
     for (const t of [...p.tracks].reverse()) {
       if (t.kind !== "video" || t.muted) continue;
-      for (const c of active.filter((c) => c.trackId === t.id)) {
+      const visible = Object.values(p.clips)
+        .filter((c) => c.trackId === t.id && frame >= c.start && frame < c.start + c.duration + extension(p, c))
+        .sort((a, b) => a.start - b.start);
+      for (const c of visible) {
         const a = p.assets[c.assetId];
         if (!a) continue;
         const el = this.el(c, a);
@@ -73,7 +76,8 @@ export class Player {
           if (!el.complete || !el.naturalWidth) continue;
         } else continue;
         const box = fitBox(p, c, a);
-        if (box) drawClip(ctx, el, box, c, 1);
+        const alpha = alphaAt(p, c, frame);
+        if (box && alpha > 0) drawClip(ctx, el, box, alpha === 1 ? c : { ...c, opacity: c.opacity * alpha }, 1);
       }
     }
   }

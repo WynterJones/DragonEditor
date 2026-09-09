@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { seconds, timecode } from "@/lib/format";
 import { useStore } from "@/store";
 import type { Clip } from "@/types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { predecessor } from "@/lib/fx";
 
 export default function Inspector() {
   const project = useStore((s) => s.project)!;
@@ -115,6 +117,31 @@ export default function Inspector() {
       )}
 
       {isVideoTrack && (
+        <Section title="Fades & transition">
+          <SliderRow label="Fade in" value={clip.fadeIn / fps} min={0} max={Math.min(10, clip.duration / fps)} step={0.1} fmt={(v) => `${v.toFixed(1)}s`} onChange={(v) => set("fadeIn", Math.round(v * fps))} />
+          <SliderRow label="Fade out" value={clip.fadeOut / fps} min={0} max={Math.min(10, clip.duration / fps)} step={0.1} fmt={(v) => `${v.toFixed(1)}s`} onChange={(v) => set("fadeOut", Math.round(v * fps))} />
+          <Row label="Transition in">
+            <Select value={clip.transition} onValueChange={(v) => v && set("transition", v as Clip["transition"])}>
+              <SelectTrigger className="h-7 w-36 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="dissolve">Cross dissolve</SelectItem>
+                <SelectItem value="fade">Fade through black</SelectItem>
+              </SelectContent>
+            </Select>
+          </Row>
+          {clip.transition !== "none" && (
+            <>
+              <SliderRow label="Duration" value={clip.transitionFrames / fps} min={0.1} max={Math.min(5, clip.duration / fps)} step={0.1} fmt={(v) => `${v.toFixed(1)}s`} onChange={(v) => set("transitionFrames", Math.round(v * fps))} />
+              {!predecessor(project, clip) && <p className="text-[11px] text-muted-foreground">No clip ends where this one starts — it will {clip.transition === "dissolve" ? "dissolve" : "fade"} in from black.</p>}
+            </>
+          )}
+        </Section>
+      )}
+
+      {isVideoTrack && (
         <Section title="Style">
           <SliderRow label="Corner radius" value={clip.radius} min={0} max={300} step={1} fmt={(v) => `${v}px`} onChange={(v) => set("radius", v)} />
           <SliderRow label="Border" value={clip.border} min={0} max={60} step={1} fmt={(v) => `${v}px`} onChange={(v) => set("border", v)} />
@@ -136,8 +163,12 @@ export default function Inspector() {
             <Switch checked={clip.muted} onCheckedChange={(c) => set("muted", c)} />
           </Row>
           <SliderRow label="Volume" value={clip.volume} min={0} max={2} step={0.01} fmt={(v) => `${Math.round(v * 100)}%`} onChange={(v) => set("volume", v)} />
-          <SliderRow label="Fade in" value={clip.fadeIn / fps} min={0} max={Math.min(10, clip.duration / fps)} step={0.1} fmt={(v) => `${v.toFixed(1)}s`} onChange={(v) => set("fadeIn", Math.round(v * fps))} />
-          <SliderRow label="Fade out" value={clip.fadeOut / fps} min={0} max={Math.min(10, clip.duration / fps)} step={0.1} fmt={(v) => `${v.toFixed(1)}s`} onChange={(v) => set("fadeOut", Math.round(v * fps))} />
+          {!isVideoTrack && (
+            <>
+              <SliderRow label="Fade in" value={clip.fadeIn / fps} min={0} max={Math.min(10, clip.duration / fps)} step={0.1} fmt={(v) => `${v.toFixed(1)}s`} onChange={(v) => set("fadeIn", Math.round(v * fps))} />
+              <SliderRow label="Fade out" value={clip.fadeOut / fps} min={0} max={Math.min(10, clip.duration / fps)} step={0.1} fmt={(v) => `${v.toFixed(1)}s`} onChange={(v) => set("fadeOut", Math.round(v * fps))} />
+            </>
+          )}
         </Section>
       )}
 

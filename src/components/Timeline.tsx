@@ -295,6 +295,11 @@ function ClipView({
         <img src={thumbUrl(asset.thumb)} alt="" className="pointer-events-none absolute inset-y-0 left-0 h-full object-cover opacity-60" draggable={false} />
       )}
       {asset.peaks && <Waveform clip={clip} asset={asset} voice={!!asset.voice} />}
+      {clip.transition !== "none" && (
+        <div className="pointer-events-none absolute inset-y-0 left-0 bg-gradient-to-r from-primary/50 to-transparent" style={{ width: (clip.transitionFrames / clip.duration) * 100 + "%" }} />
+      )}
+      {clip.fadeIn > 0 && <div className="pointer-events-none absolute top-0 left-0 h-full border-t border-r border-white/40 [clip-path:polygon(0_100%,100%_0,100%_100%)] bg-white/10" style={{ width: (clip.fadeIn / clip.duration) * 100 + "%" }} />}
+      {clip.fadeOut > 0 && <div className="pointer-events-none absolute top-0 right-0 h-full border-t border-l border-white/40 [clip-path:polygon(0_0,100%_100%,0_100%)] bg-white/10" style={{ width: (clip.fadeOut / clip.duration) * 100 + "%" }} />}
       <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center gap-1 truncate bg-gradient-to-b from-black/60 to-transparent px-1.5 py-0.5 font-medium text-foreground/90">
         {clip.muted && <VolumeX className="size-3 shrink-0" />}
         <span className="truncate">{asset.voice ? asset.voice.text : asset.name}</span>
