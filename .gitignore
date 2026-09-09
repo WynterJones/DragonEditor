@@ -7,3 +7,4 @@ src-tauri/binaries/*
 .DS_Store
 *.log
 .farmwork
+tsconfig.tsbuildinfo
