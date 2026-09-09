@@ -100,3 +100,8 @@
 }
 
 @utility mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
+@utility bg-grid {
+  background-color: #141414;
+  background-image: linear-gradient(#1e1e1e 1px, transparent 1px), linear-gradient(90deg, #1e1e1e 1px, transparent 1px);
+  background-size: 24px 24px;
+}
