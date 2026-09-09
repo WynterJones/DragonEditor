@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { temporal } from "zundo";
 import { immer } from "zustand/middleware/immer";
-import type { Asset, Clip, Project, Track, TrackKind } from "./types";
+import { CLIP_STYLE_DEFAULTS, type Asset, type Clip, type Project, type Track, type TrackKind } from "./types";
 
 interface UI {
   playhead: number;
@@ -107,6 +107,7 @@ export function addClip(assetId: string, trackId: string, start: number): string
     y: 0,
     scale: 1,
     opacity: 1,
+    ...CLIP_STYLE_DEFAULTS,
   };
   update((p) => {
     p.clips[clip.id] = clip;

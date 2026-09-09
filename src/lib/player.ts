@@ -1,5 +1,6 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { projectEnd } from "@/store";
+import { drawClip, fitBox } from "./decor";
 import type { Asset, Clip, Project } from "@/types";
 
 type El = HTMLVideoElement | HTMLAudioElement | HTMLImageElement;
@@ -71,14 +72,8 @@ export class Player {
         } else if (el instanceof HTMLImageElement) {
           if (!el.complete || !el.naturalWidth) continue;
         } else continue;
-        const nw = el instanceof HTMLVideoElement ? el.videoWidth : el.naturalWidth;
-        const nh = el instanceof HTMLVideoElement ? el.videoHeight : el.naturalHeight;
-        const k = Math.min((p.width * c.scale) / nw, (p.height * c.scale) / nh);
-        const dw = nw * k;
-        const dh = nh * k;
-        ctx.globalAlpha = c.opacity;
-        ctx.drawImage(el, (p.width - dw) / 2 + c.x, (p.height - dh) / 2 + c.y, dw, dh);
-        ctx.globalAlpha = 1;
+        const box = fitBox(p, c, a);
+        if (box) drawClip(ctx, el, box, c, 1);
       }
     }
   }

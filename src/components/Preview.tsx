@@ -5,6 +5,7 @@ import { Player } from "@/lib/player";
 import { timecode } from "@/lib/format";
 import { projectEnd, useStore } from "@/store";
 import type { Clip } from "@/types";
+import { fitBox } from "@/lib/decor";
 
 export default function Preview() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -124,11 +125,8 @@ function Overlay({ frame, playhead }: { frame: Rect; playhead: number }) {
 
   const boxOf = (c: Clip): Rect | null => {
     const a = project.assets[c.assetId];
-    if (!a?.width || !a.height) return null;
-    const f = Math.min((project.width * c.scale) / a.width, (project.height * c.scale) / a.height);
-    const dw = a.width * f;
-    const dh = a.height * f;
-    return { left: ((project.width - dw) / 2 + c.x) * k, top: ((project.height - dh) / 2 + c.y) * k, width: dw * k, height: dh * k };
+    const b = a && fitBox(project, c, a);
+    return b && { left: b.left * k, top: b.top * k, width: b.width * k, height: b.height * k };
   };
 
   // bottom track first so the top track's box is on top for hit-testing

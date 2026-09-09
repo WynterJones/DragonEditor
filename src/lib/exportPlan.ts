@@ -1,5 +1,6 @@
 import { projectEnd, trackClips } from "@/store";
 import type { Clip, Project, Track } from "@/types";
+import { decorMargin, fitBox } from "./decor";
 
 export interface ExportOpts {
   out: string;
@@ -7,7 +8,11 @@ export interface ExportOpts {
   crf: number;
   width: number;
   height: number;
+  /** per-clip PNGs rendered by prepareDecor(): rounded alpha mask + shadow/border frame */
+  decor?: Record<string, { mask?: string; frame?: string }>;
 }
+
+export const even = (n: number) => Math.max(2, Math.round(n / 2) * 2);
 
 /**
  * Builds the ffmpeg argv for a project. Every clip becomes its own input (input-seeked to
@@ -58,18 +63,34 @@ export function buildArgs(p: Project, o: ExportOpts): string[] {
       const en = sec(c.start + c.duration);
       if (a.kind === "image") inputs.push("-loop", "1", "-framerate", String(fps), "-t", sec(c.duration), "-i", a.path);
       else inputs.push("-ss", sec(c.inPoint), "-i", a.path);
-      const bw = Math.round(W * c.scale);
-      const bh = Math.round(H * c.scale);
-      f.push(
-        `[${idx}:v]trim=duration=${sec(c.duration)},setpts=PTS-STARTPTS,fps=${fps},` +
-          `scale=w=${bw}:h=${bh}:force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2,` +
-          `format=yuva420p,colorchannelmixer=aa=${c.opacity.toFixed(3)},setpts=PTS+${st}/TB[c${idx}]`,
-      );
+      const box = fitBox(p, c, a) ?? { left: 0, top: 0, width: p.width, height: p.height };
+      const dw = even(box.width * sx);
+      const dh = even(box.height * sx);
+      const left = Math.round(box.left * sx);
+      const top = Math.round(box.top * sx);
+      const d = o.decor?.[c.id];
+      const still = (path: string) => {
+        inputs.push("-loop", "1", "-framerate", String(fps), "-t", sec(c.duration), "-i", path);
+        return n++;
+      };
+      if (d?.frame) {
+        const fi = still(d.frame);
+        const m = Math.round(decorMargin(c) * sx);
+        f.push(`[${fi}:v]format=yuva420p,setpts=PTS+${st}/TB[f${idx}]`);
+        vi++;
+        f.push(`[${vlabel}][f${idx}]overlay=x=${left - m}:y=${top - m}:enable='between(t,${st},${en})':eof_action=pass[v${vi}]`);
+        vlabel = `v${vi}`;
+      }
+      let chain = `[${idx}:v]trim=duration=${sec(c.duration)},setpts=PTS-STARTPTS,fps=${fps},scale=${dw}:${dh}`;
+      if (d?.mask) {
+        const mi = still(d.mask);
+        f.push(`[${mi}:v]format=gray[mk${idx}]`);
+        f.push(`${chain}[cs${idx}]`);
+        chain = `[cs${idx}][mk${idx}]alphamerge`;
+      }
+      f.push(`${chain},format=rgba,colorchannelmixer=aa=${c.opacity.toFixed(3)},format=yuva420p,setpts=PTS+${st}/TB[c${idx}]`);
       vi++;
-      f.push(
-        `[${vlabel}][c${idx}]overlay=x=(W-w)/2+${Math.round(c.x * sx)}:y=(H-h)/2+${Math.round(c.y * sx)}` +
-          `:enable='between(t,${st},${en})':eof_action=pass[v${vi}]`,
-      );
+      f.push(`[${vlabel}][c${idx}]overlay=x=${left}:y=${top}:enable='between(t,${st},${en})':eof_action=pass[v${vi}]`);
       vlabel = `v${vi}`;
       if (a.kind === "video" && a.hasAudio && !c.muted) audio(idx, c, t);
     }
@@ -140,4 +161,42 @@ export function buildArgs(p: Project, o: ExportOpts): string[] {
     "pipe:1",
     o.out,
   ];
+}
+
+/** Renders the rounded mask + shadow/border frame PNGs for every decorated video clip. */
+export async function prepareDecor(p: Project, sx: number, write: (path: string, bytes: Uint8Array) => Promise<void>) {
+  const { drawClip, hasDecor, renderPng } = await import("./decor");
+  const decor: NonNullable<ExportOpts["decor"]> = {};
+  for (const c of Object.values(p.clips)) {
+    const a = p.assets[c.assetId];
+    const t = p.tracks.find((t) => t.id === c.trackId);
+    if (!a || t?.kind !== "video" || !hasDecor(c)) continue;
+    const box = fitBox(p, c, a);
+    if (!box) continue;
+    const dw = even(box.width * sx);
+    const dh = even(box.height * sx);
+    const entry: { mask?: string; frame?: string } = {};
+    if (c.radius > 0) {
+      entry.mask = `${p.dir}/cache/export-${c.id}-mask.png`;
+      const rc = { ...c, border: 0, shadow: 0, opacity: 1 };
+      await write(entry.mask, await renderPng(dw, dh, (ctx) => drawClip(ctx, whiteRect(dw, dh), { left: 0, top: 0, width: dw, height: dh }, rc, sx)));
+    }
+    if (c.border > 0 || c.shadow > 0) {
+      entry.frame = `${p.dir}/cache/export-${c.id}-frame.png`;
+      const m = Math.round(decorMargin(c) * sx);
+      await write(entry.frame, await renderPng(dw + 2 * m, dh + 2 * m, (ctx) => drawClip(ctx, null, { left: m, top: m, width: dw, height: dh }, c, sx)));
+    }
+    decor[c.id] = entry;
+  }
+  return decor;
+}
+
+function whiteRect(w: number, h: number) {
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, w, h);
+  return c;
 }

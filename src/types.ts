@@ -42,7 +42,15 @@ export interface Clip {
   y: number;
   scale: number;
   opacity: number;
+  /** style, in project px */
+  radius: number;
+  border: number;
+  borderColor: string;
+  shadow: number;
+  shadowOpacity: number;
 }
+
+export const CLIP_STYLE_DEFAULTS = { radius: 0, border: 0, borderColor: "#ffffff", shadow: 0, shadowOpacity: 0.6 };
 
 export interface VoiceSettings {
   voiceId: string;

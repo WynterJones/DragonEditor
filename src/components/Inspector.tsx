@@ -114,6 +114,22 @@ export default function Inspector() {
         </Section>
       )}
 
+      {isVideoTrack && (
+        <Section title="Style">
+          <SliderRow label="Corner radius" value={clip.radius} min={0} max={300} step={1} fmt={(v) => `${v}px`} onChange={(v) => set("radius", v)} />
+          <SliderRow label="Border" value={clip.border} min={0} max={60} step={1} fmt={(v) => `${v}px`} onChange={(v) => set("border", v)} />
+          {clip.border > 0 && (
+            <Row label="Border color">
+              <input type="color" value={clip.borderColor} onChange={(e) => set("borderColor", e.target.value)} className="h-6 w-10 cursor-pointer rounded border bg-transparent" />
+            </Row>
+          )}
+          <SliderRow label="Shadow" value={clip.shadow} min={0} max={200} step={1} fmt={(v) => (v ? `${v}px` : "off")} onChange={(v) => set("shadow", v)} />
+          {clip.shadow > 0 && (
+            <SliderRow label="Shadow opacity" value={clip.shadowOpacity} min={0} max={1} step={0.01} fmt={(v) => `${Math.round(v * 100)}%`} onChange={(v) => set("shadowOpacity", v)} />
+          )}
+        </Section>
+      )}
+
       {hasAudio && (
         <Section title="Audio">
           <Row label="Mute">

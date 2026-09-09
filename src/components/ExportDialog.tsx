@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { buildArgs } from "@/lib/exportPlan";
+import { writeFile } from "@tauri-apps/plugin-fs";
+import { buildArgs, prepareDecor } from "@/lib/exportPlan";
 import { api } from "@/lib/tauri";
 import { seconds } from "@/lib/format";
 import { projectEnd, useStore } from "@/store";
@@ -49,7 +50,8 @@ export default function ExportDialog({ open, onOpenChange }: { open: boolean; on
     if (!out) return;
     let args: string[];
     try {
-      args = buildArgs(project, { out, codec, crf: Number(crf), width: Math.round((project.width * k) / 2) * 2, height: Math.round((project.height * k) / 2) * 2 });
+      const decor = await prepareDecor(project, k, (path, bytes) => writeFile(path, bytes));
+      args = buildArgs(project, { out, codec, crf: Number(crf), width: Math.round((project.width * k) / 2) * 2, height: Math.round((project.height * k) / 2) * 2, decor });
     } catch (e) {
       return toast.error(String(e));
     }

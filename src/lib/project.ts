@@ -1,7 +1,7 @@
 import { copyFile, mkdir, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { api } from "./tauri";
 import { id } from "@/store";
-import type { Asset, AssetKind, Project } from "@/types";
+import { CLIP_STYLE_DEFAULTS, type Asset, type AssetKind, type Project } from "@/types";
 
 const RECENT_KEY = "dragon.recent";
 
@@ -69,6 +69,7 @@ export async function saveProject(p: Project) {
 export async function openProject(dir: string): Promise<Project> {
   const p = JSON.parse(await readTextFile(`${dir}/project.json`)) as Project;
   p.dir = dir;
+  for (const id in p.clips) p.clips[id] = { ...CLIP_STYLE_DEFAULTS, ...p.clips[id] };
   return p;
 }
 
