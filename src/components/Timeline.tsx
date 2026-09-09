@@ -141,7 +141,7 @@ export default function Timeline() {
         <Button variant="ghost" size="xs" onClick={() => addTrack("audio")}>
           <Plus /> Audio
         </Button>
-        <Button variant="ghost" size="xs" onClick={addText} title="Add a text clip at the playhead">
+        <Button variant="ghost" size="xs" onClick={() => addText()} title="Add a text clip at the playhead">
           <Type /> Text
         </Button>
         <div className="mx-2 h-4 w-px bg-border" />

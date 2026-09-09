@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { ChevronLeft, Redo2, Undo2, Upload } from "lucide-react";
+import { ChevronLeft, PenLine, Redo2, Undo2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,6 +11,7 @@ import VoicePanel from "@/components/VoicePanel";
 import MusicPanel from "@/components/MusicPanel";
 import Inspector from "@/components/Inspector";
 import ExportDialog from "@/components/ExportDialog";
+import ScriptDrawer from "@/components/ScriptDrawer";
 import { SettingsButton } from "@/components/SettingsDialog";
 import { importFile, kindOf, saveProject } from "@/lib/project";
 import { deleteSelected, redo, splitAtPlayhead, undo, useStore } from "@/store";
@@ -20,6 +21,7 @@ export default function Editor() {
   const dirty = useStore((s) => s.dirty);
   const { setProject, setUI, update } = useStore.getState();
   const [exporting, setExporting] = useState(false);
+  const [scriptOpen, setScriptOpen] = useState(false);
 
   // autosave
   useEffect(() => {
@@ -116,6 +118,9 @@ export default function Editor() {
           <Redo2 />
         </Button>
         <SettingsButton />
+        <Button size="sm" variant={scriptOpen ? "default" : "secondary"} onClick={() => setScriptOpen((o) => !o)}>
+          <PenLine /> Script
+        </Button>
         <Button size="sm" onClick={() => setExporting(true)}>
           <Upload /> Export
         </Button>
@@ -153,6 +158,7 @@ export default function Editor() {
       </section>
 
       <ExportDialog open={exporting} onOpenChange={setExporting} />
+      <ScriptDrawer open={scriptOpen} onClose={() => setScriptOpen(false)} />
     </div>
   );
 }

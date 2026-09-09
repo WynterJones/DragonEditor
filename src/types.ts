@@ -100,6 +100,18 @@ export interface VoiceSettings {
   speakerBoost: boolean;
 }
 
+export type BeatKind = "voice" | "sfx" | "music" | "text" | "note";
+export interface Beat {
+  id: string;
+  kind: BeatKind;
+  text: string;
+  assetId?: string;
+}
+export interface ChatMsg {
+  role: "user" | "assistant";
+  text: string;
+}
+
 export interface Project {
   version: 1;
   name: string;
@@ -112,6 +124,7 @@ export interface Project {
   clips: Record<string, Clip>;
   ducking: { enabled: boolean; ratio: number };
   voice: VoiceSettings & { script: string };
+  script: { beats: Beat[]; chat: ChatMsg[]; provider: string };
 }
 
 export interface MediaInfo {

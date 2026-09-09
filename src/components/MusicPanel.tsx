@@ -7,9 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { api } from "@/lib/tauri";
-import { describe } from "@/lib/project";
-import { addClip, addTrack, id, projectEnd, useStore } from "@/store";
+import { generateAudio, placeAsset } from "@/lib/generate";
+import { projectEnd, useStore } from "@/store";
 import { AssetCard } from "./MediaPanel";
 import { openSettings } from "./SettingsDialog";
 
@@ -17,7 +16,6 @@ const num = (v: number | readonly number[]) => (Array.isArray(v) ? v[0] : (v as 
 
 export default function MusicPanel() {
   const project = useStore((s) => s.project)!;
-  const update = useStore((s) => s.update);
   const end = projectEnd(project);
   const [musicPrompt, setMusicPrompt] = useState("");
   const [seconds, setSeconds] = useState(Math.min(300, Math.max(10, Math.ceil(end / project.fps) || 60)));
@@ -32,20 +30,8 @@ export default function MusicPanel() {
     if (!prompt) return toast.error("Describe what you want first");
     setBusy(kind);
     try {
-      const aid = id();
-      const out = `${project.dir}/voice/${kind}-${aid}.mp3`;
-      if (kind === "music") await api.audio("music", { prompt, music_length_ms: seconds * 1000, model_id: "music_v2", force_instrumental: instrumental }, out);
-      else await api.audio("sound-generation", { text: prompt, ...(sfxSeconds > 0 ? { duration_seconds: sfxSeconds } : {}) }, out);
-      const asset = await describe(project, aid, "audio", prompt.slice(0, 60), out);
-      asset.gen = { kind, prompt };
-      update((p) => {
-        p.assets[asset.id] = asset;
-      });
-      const s = useStore.getState();
-      const tracks = s.project!.tracks;
-      const track = kind === "music" ? tracks.find((t) => t.kind === "background") : tracks.find((t) => t.kind === "audio" && t.name === "SFX");
-      const tid = track?.id ?? addTrack(kind === "music" ? "background" : "audio", kind === "music" ? "Music" : "SFX");
-      addClip(asset.id, tid, s.playhead);
+      const asset = await generateAudio(kind, prompt, kind === "music" ? { seconds, instrumental } : { seconds: sfxSeconds || undefined });
+      placeAsset(asset.id, kind, useStore.getState().playhead);
       toast.success(kind === "music" ? "Music added to the Music track" : "Sound effect added at the playhead");
     } catch (e) {
       toast.error(String(e), { action: { label: "Settings", onClick: openSettings } });

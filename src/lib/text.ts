@@ -100,11 +100,11 @@ export function renderText(s: TextStyle, k: number, maxWidth: number) {
 export const wrapWidth = (projectWidth: number) => projectWidth * 0.9;
 
 /** Creates a text asset + clip at the playhead on the top video track. */
-export function addText() {
+export function addText(text?: string, at?: number) {
   const s = useStore.getState();
   const p = s.project;
   if (!p) return;
-  const style = { ...DEFAULT_TEXT, size: Math.round(p.height / 11) };
+  const style = { ...DEFAULT_TEXT, size: Math.round(p.height / 11), text: text ?? DEFAULT_TEXT.text };
   const { width, height } = layout(style, wrapWidth(p.width));
   const asset: Asset = { id: id(), kind: "text", name: style.text, path: "", duration: 0, width, height, hasAudio: false, text: style };
   s.update((p) => {
@@ -112,7 +112,7 @@ export function addText() {
   });
   const track = useStore.getState().project!.tracks.find((t) => t.kind === "video" && !t.locked);
   const tid = track?.id ?? addTrack("video");
-  addClip(asset.id, tid, s.playhead);
+  return addClip(asset.id, tid, at ?? s.playhead);
 }
 
 export function updateText(assetId: string, patch: Partial<TextStyle>) {

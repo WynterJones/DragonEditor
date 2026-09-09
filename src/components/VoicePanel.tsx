@@ -10,8 +10,8 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/tauri";
-import { describe } from "@/lib/project";
-import { addClip, addTrack, id, useStore } from "@/store";
+import { generateAudio, placeAsset } from "@/lib/generate";
+import { useStore } from "@/store";
 import type { Voice } from "@/types";
 import { AssetCard } from "./MediaPanel";
 import { openSettings } from "./SettingsDialog";
@@ -60,26 +60,8 @@ export default function VoicePanel() {
     if (!v.voiceId.trim()) return toast.error("Enter a voice ID or pick a voice");
     setGenerating(true);
     try {
-      const aid = id();
-      const out = `${project.dir}/voice/${aid}.mp3`;
-      await api.audio(
-        `text-to-speech/${v.voiceId.trim()}`,
-        {
-          text,
-          model_id: v.modelId,
-          voice_settings: { stability: v.stability, similarity_boost: v.similarity, style: v.style, use_speaker_boost: v.speakerBoost },
-        },
-        out,
-      );
-      const asset = await describe(project, aid, "audio", `voice-${aid}.mp3`, out);
-      asset.voice = { text, voiceId: v.voiceId, modelId: v.modelId };
-      update((p) => {
-        p.assets[asset.id] = asset;
-      });
-      const s = useStore.getState();
-      const track = s.project!.tracks.find((t) => t.kind === "audio" && t.name === "Voice") ?? s.project!.tracks.find((t) => t.kind === "audio");
-      const tid = track?.id ?? addTrack("audio", "Voice");
-      addClip(asset.id, tid, s.playhead);
+      const asset = await generateAudio("voice", text);
+      placeAsset(asset.id, "voice", useStore.getState().playhead);
       toast.success("Voice added to timeline");
     } catch (e) {
       toast.error(String(e), { action: { label: "Settings", onClick: openSettings } });

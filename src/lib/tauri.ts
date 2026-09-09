@@ -9,6 +9,8 @@ export const api = {
   voices: () => invoke<Voice[]>("eleven_voices"),
   /** POST to an ElevenLabs audio endpoint, save mp3, return duration in seconds */
   audio: (path: string, body: Record<string, unknown>, outPath: string) => invoke<number>("eleven_audio", { path, body, outPath }),
+  aiProviders: () => invoke<string[]>("ai_providers"),
+  aiChat: (provider: string, prompt: string, cwd: string) => invoke<string>("ai_chat", { provider, prompt, cwd }),
   probe: (path: string) => invoke<MediaInfo>("probe", { path }),
   thumbnail: (path: string, out: string, time: number) => invoke<void>("thumbnail", { path, out, time }),
   peaks: (path: string, count: number) => invoke<number[]>("peaks", { path, count }),

@@ -56,6 +56,7 @@ export async function createProject(opts: { name: string; parent: string; width:
       style: 0,
       speakerBoost: true,
     },
+    script: { beats: [], chat: [], provider: "claude" },
   };
   await saveProject(p);
   return p;
@@ -70,6 +71,7 @@ export async function openProject(dir: string): Promise<Project> {
   const p = JSON.parse(await readTextFile(`${dir}/project.json`)) as Project;
   p.dir = dir;
   for (const id in p.clips) p.clips[id] = { ...CLIP_STYLE_DEFAULTS, ...p.clips[id] };
+  p.script ??= { beats: [], chat: [], provider: "claude" };
   return p;
 }
 

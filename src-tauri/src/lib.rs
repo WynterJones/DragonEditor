@@ -1,3 +1,4 @@
+mod ai;
 mod eleven;
 mod export;
 mod keys;
@@ -43,6 +44,8 @@ pub fn run() {
             keys::clear_api_key,
             eleven::eleven_voices,
             eleven::eleven_audio,
+            ai::ai_providers,
+            ai::ai_chat,
             media::probe,
             media::thumbnail,
             media::peaks,
