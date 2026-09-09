@@ -9,11 +9,15 @@ export function successor(p: Project, c: Clip) {
   return Object.values(p.clips).find((o) => o.trackId === c.trackId && o.start === c.start + c.duration);
 }
 
-/** Effective fade lengths (frames) once transitions are folded in. */
-export function fadeFrames(p: Project, c: Clip) {
+/**
+ * Effective fade lengths (frames) once transitions are folded in. A dissolving successor
+ * overrides this clip's video fade-out (it keeps rendering underneath); audio still fades.
+ */
+export function fadeFrames(p: Project, c: Clip, audio = false) {
   const inF = Math.max(c.fadeIn, c.transition !== "none" ? c.transitionFrames : 0);
   const s = successor(p, c);
-  const outF = Math.max(c.fadeOut, s?.transition === "fade" ? s.transitionFrames : 0);
+  let outF = Math.max(c.fadeOut, s?.transition === "fade" ? s.transitionFrames : 0);
+  if (!audio && s?.transition === "dissolve") outF = 0;
   return { in: Math.min(inF, c.duration), out: Math.min(outF, c.duration) };
 }
 

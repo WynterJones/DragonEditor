@@ -43,7 +43,7 @@ export function buildArgs(p: Project, o: ExportOpts): string[] {
       "aformat=sample_rates=48000:channel_layouts=stereo",
       `volume=${(c.volume * t.volume).toFixed(3)}`,
     ];
-    const fd = fadeFrames(p, c);
+    const fd = fadeFrames(p, c, true);
     if (fd.in > 0) chain.push(`afade=t=in:st=0:d=${sec(fd.in)}`);
     if (fd.out > 0) chain.push(`afade=t=out:st=${sec(c.duration - fd.out)}:d=${sec(fd.out)}`);
     const ms = Math.round((c.start / fps) * 1000);
