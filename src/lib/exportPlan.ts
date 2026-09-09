@@ -132,8 +132,9 @@ export function buildArgs(p: Project, o: ExportOpts): string[] {
     mix(vox, "vox");
     mix(bg, "bg");
     if (p.ducking.enabled) {
-      f.push("[vox]asplit=2[vox1][vox2]");
-      f.push(`[bg][vox2]sidechaincompress=threshold=0.03:ratio=${p.ducking.ratio}:attack=30:release=600[bgd]`);
+      // sidechaincompress stops when the sidechain ends — pad the voice mix to the full timeline
+      f.push(`[vox]asplit=2[vox1][vox2];[vox2]apad=whole_dur=${dur}[vox2p]`);
+      f.push(`[bg][vox2p]sidechaincompress=threshold=0.03:ratio=${p.ducking.ratio}:attack=30:release=600[bgd]`);
       f.push("[vox1][bgd]amix=inputs=2:duration=longest:normalize=0[aout]");
     } else {
       f.push("[vox][bg]amix=inputs=2:duration=longest:normalize=0[aout]");

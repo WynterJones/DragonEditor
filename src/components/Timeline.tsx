@@ -154,7 +154,7 @@ export default function Timeline() {
           <ZoomOut />
         </Button>
         <Slider
-          className="w-36"
+          className="w-36 [&_[data-slot=slider-range]]:bg-neutral-500 [&_[data-slot=slider-thumb]]:border-neutral-400 [&_[data-slot=slider-thumb]]:bg-neutral-200 [&_[data-slot=slider-thumb]]:ring-neutral-500/40"
           value={[Math.log(zoom)]}
           min={Math.log(0.05)}
           max={Math.log(40)}
