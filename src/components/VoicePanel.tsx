@@ -113,7 +113,7 @@ export default function VoicePanel() {
             </Button>
           </div>
           {voices && voices.length > 0 && (
-            <Select value={voices.some((x) => x.voice_id === v.voiceId) ? v.voiceId : ""} onValueChange={(val) => val && setV("voiceId", val)}>
+            <Select value={voices.some((x) => x.voice_id === v.voiceId) ? v.voiceId : null} onValueChange={(val) => val && setV("voiceId", val)}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Pick from your ElevenLabs voices" />
               </SelectTrigger>

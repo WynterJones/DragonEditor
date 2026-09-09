@@ -41,7 +41,7 @@ Solo creator or small marketing team producing narrated videos regularly. Comfor
     project.json        # timeline, tracks, clips, settings
     assets/             # imported media (copied or referenced by absolute path — user choice on import)
     voice/              # generated ElevenLabs audio + script text
-    .cache/             # thumbnails, waveform peaks, proxies (safe to delete)
+    cache/             # thumbnails, waveform peaks, proxies (safe to delete)
   ```
 - Recent projects list on the start screen.
 - Autosave every 30s + on every destructive edit; undo/redo history (in-memory, 200 steps).
@@ -132,7 +132,7 @@ Solo creator or small marketing team producing narrated videos regularly. Comfor
 | UI | Tailwind v4 + shadcn/ui + Lucide | Requested; polished defaults |
 | Timeline | Custom React component (absolute positioning, pointer events, virtualized) | No off-the-shelf timeline is good enough; this is the product |
 | Preview | `<canvas>` compositor driven by `requestAnimationFrame`, hidden `<video>` elements per active clip, Web Audio API graph for mixing/ducking | Real-time, in-browser, no native deps |
-| Waveforms | Web Audio `decodeAudioData` → peaks cached to `.cache/` | Stdlib |
+| Waveforms | Web Audio `decodeAudioData` → peaks cached to `cache/` | Stdlib |
 | Thumbnails / probe | FFmpeg / ffprobe sidecar | Already the export engine |
 | Export | FFmpeg sidecar, `filter_complex` generated in TS, spawned from Rust, progress parsed from `-progress pipe:1` | Highest quality, proven, one engine for everything |
 | ElevenLabs | Direct REST from Rust (`reqwest`) so the key never touches the webview | Key stays out of JS |
@@ -208,7 +208,7 @@ FFmpeg + ffprobe bundled as Tauri sidecars (static builds, `aarch64-apple-darwin
 | Risk | Mitigation |
 |---|---|
 | Preview/export drift (browser video seeking isn't frame-exact) | Integer-frame model; export is ground truth; parity tests; preview labelled as approximate for transitions |
-| 4K preview performance in webview | Proxy generation (720p H.264 in `.cache/`) on import for sources > 1080p; quality toggle |
+| 4K preview performance in webview | Proxy generation (720p H.264 in `cache/`) on import for sources > 1080p; quality toggle |
 | FFmpeg `filter_complex` complexity explodes with many overlays | Generate per-track intermediate renders for > N layers, then composite (two-pass) |
 | ElevenLabs API/model churn | Model list fetched live; settings versioned per segment |
 | Sidecar signing/notarization pain | Sign sidecars in CI; document in `BUILD.md` |

@@ -100,4 +100,3 @@
 }
 
 @utility mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
-@utility drag-region { -webkit-app-region: drag; }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import { Lock, LockOpen, Plus, Scissors, Volume2, VolumeX, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -172,7 +173,7 @@ export default function Timeline() {
           {project.tracks.map((t) => (
             <div key={t.id} className="flex border-b border-border/60" style={{ height: rowH(t) }} data-track={t.id}>
               <div
-                className={cn("sticky left-0 z-10 flex shrink-0 flex-col justify-center gap-1 border-r bg-[var(--surface-2)] px-3", t.kind === "background" && "bg-[#141208]")}
+                className={cn("sticky left-0 z-[26] flex shrink-0 flex-col justify-center gap-1 border-r bg-[var(--surface-2)] px-3", t.kind === "background" && "bg-[#141208]")}
                 style={{ width: HEADER_W }}
               >
                 <div className="flex items-center gap-2">
@@ -308,7 +309,6 @@ function ClipView({
   );
 }
 
-import { convertFileSrc } from "@tauri-apps/api/core";
 const thumbUrl = (p: string) => convertFileSrc(p);
 
 function Waveform({ clip, asset, voice }: { clip: Clip; asset: Asset; voice: boolean }) {
@@ -343,7 +343,7 @@ function Playhead({ zoom, scrollRef }: { zoom: number; scrollRef: React.RefObjec
     if (vis > el.clientWidth - 40 || vis < HEADER_W) el.scrollLeft = x - HEADER_W - 40;
   }, [x, playing]);
   return (
-    <div className="pointer-events-none absolute top-0 bottom-0 z-20 w-px bg-primary" style={{ left: x }}>
+    <div className="pointer-events-none absolute top-0 bottom-0 z-[25] w-px bg-primary" style={{ left: x }}>
       <div className="absolute -top-0 -left-[5px] size-0 border-x-[5px] border-t-[8px] border-x-transparent border-t-primary" />
     </div>
   );

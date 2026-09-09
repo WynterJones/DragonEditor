@@ -98,7 +98,7 @@ export default function Editor() {
 
   return (
     <div className="grid h-screen grid-rows-[44px_minmax(0,1fr)_320px] bg-background">
-      <header className="drag-region flex items-center gap-2 border-b bg-[var(--surface-1)] pr-3 pl-[84px]">
+      <header data-tauri-drag-region className="flex items-center gap-2 border-b bg-[var(--surface-1)] pr-3 pl-[84px]">
         <Button variant="ghost" size="icon-sm" onClick={close} title="Back to projects">
           <ChevronLeft />
         </Button>

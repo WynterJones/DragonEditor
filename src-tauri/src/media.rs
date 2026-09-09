@@ -73,11 +73,9 @@ pub async fn probe(app: AppHandle, path: String) -> Result<MediaInfo, String> {
 #[tauri::command]
 pub async fn thumbnail(app: AppHandle, path: String, out: String, time: f64) -> Result<(), String> {
     let t = format!("{time:.3}");
-    run(app_ref(&app), "ffmpeg", &["-v", "error", "-y", "-ss", &t, "-i", &path, "-frames:v", "1", "-vf", "scale=320:-2", &out]).await?;
+    run(&app, "ffmpeg", &["-v", "error", "-y", "-ss", &t, "-i", &path, "-frames:v", "1", "-vf", "scale=320:-2", &out]).await?;
     Ok(())
 }
-
-fn app_ref(app: &AppHandle) -> &AppHandle { app }
 
 /// Downmixed 8kHz peaks, `count` buckets of max-abs amplitude in 0..1.
 #[tauri::command]

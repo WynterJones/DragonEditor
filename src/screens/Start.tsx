@@ -67,7 +67,7 @@ export default function Start() {
   };
 
   return (
-    <div className="drag-region flex h-screen flex-col items-center justify-center gap-10 bg-[radial-gradient(ellipse_at_top,#1a1508_0%,#0a0a0a_55%)]">
+    <div data-tauri-drag-region className="flex h-screen flex-col items-center justify-center gap-10 bg-[radial-gradient(ellipse_at_top,#1a1508_0%,#0a0a0a_55%)]">
       <div className="absolute top-3 right-3">
         <SettingsButton />
       </div>

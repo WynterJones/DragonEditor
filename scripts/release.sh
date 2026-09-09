@@ -55,7 +55,7 @@ EOF
 
 echo "▶ committing and tagging"
 git add package.json package-lock.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
-git commit -qm "Release $TAG"
+git diff --cached --quiet || git commit -qm "Release $TAG"
 git tag "$TAG"
 git push -q && git push -q --tags
 

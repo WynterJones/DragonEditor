@@ -31,7 +31,7 @@ export function forgetRecent(dir: string) {
 
 export async function createProject(opts: { name: string; parent: string; width: number; height: number; fps: number }) {
   const dir = `${opts.parent}/${opts.name.replace(/[/\\:]/g, "-")}.dragon`;
-  for (const sub of ["", "assets", "voice", ".cache"]) await mkdir(`${dir}/${sub}`, { recursive: true });
+  for (const sub of ["", "assets", "voice", "cache"]) await mkdir(`${dir}/${sub}`, { recursive: true });
   const p: Project = {
     version: 1,
     name: opts.name,
@@ -108,7 +108,7 @@ export async function describe(p: Project, aid: string, kind: AssetKind, name: s
     hasAudio: info.has_audio,
   };
   if (kind !== "audio") {
-    const thumb = `${p.dir}/.cache/${aid}.jpg`;
+    const thumb = `${p.dir}/cache/${aid}.jpg`;
     await api.thumbnail(path, thumb, kind === "video" ? Math.min(1, info.duration / 2) : 0);
     asset.thumb = thumb;
   }
