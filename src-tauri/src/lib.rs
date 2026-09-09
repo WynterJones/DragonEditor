@@ -42,7 +42,7 @@ pub fn run() {
             keys::has_api_key,
             keys::clear_api_key,
             eleven::eleven_voices,
-            eleven::eleven_generate,
+            eleven::eleven_audio,
             media::probe,
             media::thumbnail,
             media::peaks,

@@ -15,7 +15,7 @@ export default function MediaPanel() {
   const project = useStore((s) => s.project)!;
   const update = useStore((s) => s.update);
   const [busy, setBusy] = useState(false);
-  const assets = Object.values(project.assets).filter((a) => !a.voice && a.kind !== "text");
+  const assets = Object.values(project.assets).filter((a) => !a.voice && !a.gen && a.kind !== "text");
 
   const pick = async () => {
     const files = await open({ multiple: true, filters: [{ name: "Media", extensions: ALL_EXT }] });

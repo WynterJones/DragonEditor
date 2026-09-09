@@ -32,6 +32,7 @@ export interface Asset {
   thumb?: string;
   peaks?: number[];
   voice?: { text: string; voiceId: string; modelId: string };
+  gen?: { kind: "music" | "sfx"; prompt: string };
   /** kind === "text": width/height are the measured block size at scale 1 */
   text?: TextStyle;
 }

@@ -8,6 +8,7 @@ import Timeline from "@/components/Timeline";
 import Preview from "@/components/Preview";
 import MediaPanel from "@/components/MediaPanel";
 import VoicePanel from "@/components/VoicePanel";
+import MusicPanel from "@/components/MusicPanel";
 import Inspector from "@/components/Inspector";
 import ExportDialog from "@/components/ExportDialog";
 import { SettingsButton } from "@/components/SettingsDialog";
@@ -123,15 +124,19 @@ export default function Editor() {
       <div className="grid min-h-0 min-w-0 grid-cols-[300px_minmax(0,1fr)_272px]">
         <aside className="min-h-0 border-r bg-[var(--surface-1)]">
           <Tabs defaultValue="media" className="flex h-full flex-col gap-0">
-            <TabsList className="m-2 grid grid-cols-2">
+            <TabsList className="m-2 grid grid-cols-3">
               <TabsTrigger value="media">Media</TabsTrigger>
               <TabsTrigger value="voice">Voice</TabsTrigger>
+              <TabsTrigger value="music">Music</TabsTrigger>
             </TabsList>
             <TabsContent value="media" className="min-h-0 flex-1">
               <MediaPanel />
             </TabsContent>
             <TabsContent value="voice" className="min-h-0 flex-1">
               <VoicePanel />
+            </TabsContent>
+            <TabsContent value="music" className="min-h-0 flex-1">
+              <MusicPanel />
             </TabsContent>
           </Tabs>
         </aside>

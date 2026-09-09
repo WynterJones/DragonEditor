@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use serde_json::Value;
 use std::collections::HashMap;
 use tauri::AppHandle;
 
@@ -40,46 +40,22 @@ pub async fn eleven_voices() -> Result<Vec<Voice>, String> {
     Ok(check(res).await?.json::<R>().await.map_err(|e| e.to_string())?.voices)
 }
 
-#[derive(Deserialize)]
-pub struct GenerateReq {
-    pub voice_id: String,
-    pub text: String,
-    pub model_id: String,
-    pub stability: f32,
-    pub similarity_boost: f32,
-    pub style: f32,
-    pub use_speaker_boost: bool,
-    pub out_path: String,
-}
-
-/// Generates speech to `out_path` (mp3) and returns its duration in seconds.
+/// POSTs `body` to an ElevenLabs audio endpoint (`text-to-speech/<voice>`, `music`,
+/// `sound-generation`), writes the mp3 to `out_path` and returns its duration in seconds.
 #[tauri::command]
-pub async fn eleven_generate(app: AppHandle, req: GenerateReq) -> Result<f64, String> {
+pub async fn eleven_audio(app: AppHandle, path: String, body: Value, out_path: String) -> Result<f64, String> {
     let key = crate::keys::get_api_key()?;
-    let body = json!({
-        "text": req.text,
-        "model_id": req.model_id,
-        "voice_settings": {
-            "stability": req.stability,
-            "similarity_boost": req.similarity_boost,
-            "style": req.style,
-            "use_speaker_boost": req.use_speaker_boost,
-        }
-    });
     let res = reqwest::Client::new()
-        .post(format!(
-            "{API}/text-to-speech/{}?output_format=mp3_44100_128",
-            req.voice_id.trim()
-        ))
+        .post(format!("{API}/{path}?output_format=mp3_44100_128"))
         .header("xi-api-key", key)
         .json(&body)
         .send()
         .await
         .map_err(|e| e.to_string())?;
     let bytes = check(res).await?.bytes().await.map_err(|e| e.to_string())?;
-    if let Some(parent) = std::path::Path::new(&req.out_path).parent() {
+    if let Some(parent) = std::path::Path::new(&out_path).parent() {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
-    std::fs::write(&req.out_path, &bytes).map_err(|e| e.to_string())?;
-    Ok(crate::media::probe_inner(&app, &req.out_path).await?.duration)
+    std::fs::write(&out_path, &bytes).map_err(|e| e.to_string())?;
+    Ok(crate::media::probe_inner(&app, &out_path).await?.duration)
 }

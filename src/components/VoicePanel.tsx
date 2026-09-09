@@ -62,16 +62,15 @@ export default function VoicePanel() {
     try {
       const aid = id();
       const out = `${project.dir}/voice/${aid}.mp3`;
-      await api.generate({
-        voice_id: v.voiceId,
-        text,
-        model_id: v.modelId,
-        stability: v.stability,
-        similarity_boost: v.similarity,
-        style: v.style,
-        use_speaker_boost: v.speakerBoost,
-        out_path: out,
-      });
+      await api.audio(
+        `text-to-speech/${v.voiceId.trim()}`,
+        {
+          text,
+          model_id: v.modelId,
+          voice_settings: { stability: v.stability, similarity_boost: v.similarity, style: v.style, use_speaker_boost: v.speakerBoost },
+        },
+        out,
+      );
       const asset = await describe(project, aid, "audio", `voice-${aid}.mp3`, out);
       asset.voice = { text, voiceId: v.voiceId, modelId: v.modelId };
       update((p) => {
