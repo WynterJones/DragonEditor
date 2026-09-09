@@ -25,10 +25,9 @@ export TAURI_SIGNING_PRIVATE_KEY_PASSWORD="${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:
 [ -z "$(git status --porcelain)" ] || { echo "working tree not clean"; exit 1; }
 
 echo "▶ bumping version to $VERSION"
-npm version "$VERSION" --no-git-tag-version >/dev/null
+npm pkg set version="$VERSION"
 sed -i '' "s/^  \"version\": \".*\"/  \"version\": \"$VERSION\"/" src-tauri/tauri.conf.json
 sed -i '' "s/^version = \".*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
-(cd src-tauri && cargo generate-lockfile --offline >/dev/null 2>&1 || cargo update -p dragoneditor >/dev/null)
 
 echo "▶ building, signing and notarizing (this takes a few minutes)"
 npx tauri build --target "$TARGET"
