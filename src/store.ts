@@ -182,11 +182,12 @@ export function trimClip(clipId: string, side: "l" | "r", edge: number) {
 
 export function splitAtPlayhead() {
   const { playhead, selection, update, setUI } = useStore.getState();
+  if (!selection.length) return;
   const created: string[] = [];
   update((p) => {
     const targets = Object.values(p.clips).filter(
       (c) =>
-        (selection.length ? selection.includes(c.id) : true) &&
+        selection.includes(c.id) &&
         playhead > c.start &&
         playhead < c.start + c.duration &&
         !p.tracks.find((t) => t.id === c.trackId)?.locked,

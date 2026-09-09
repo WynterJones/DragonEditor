@@ -18,6 +18,8 @@ export class Player {
   onFrame?: (frame: number) => void;
   private els = new Map<string, El>();
   private textKeys = new Map<string, string>();
+  private lastSeek = new Map<string, number>();
+  private clockId: string | null = null;
   private raf = 0;
   private t0 = 0;
   private f0 = 0;
@@ -92,8 +94,8 @@ export class Player {
     }
   }
 
-  /** Start/stop/sync media elements to the playhead. */
-  private sync(p: Project, frame: number) {
+  /** Start/stop/sync media elements to the playhead. The clock clip is never re-seeked. */
+  private sync(p: Project, frame: number, now: number) {
     const active = new Set(this.active(p, frame).map((c) => c.id));
     for (const c of Object.values(p.clips)) {
       const a = p.assets[c.assetId];
@@ -104,14 +106,38 @@ export class Player {
         if (!el.paused) el.pause();
         continue;
       }
-      el.volume = Math.min(1, c.volume * track.volume);
-      el.muted = c.muted;
+      const vol = Math.min(1, c.volume * track.volume);
+      if (el.volume !== vol) el.volume = vol;
+      if (el.muted !== c.muted) el.muted = c.muted;
       const t = (frame - c.start + c.inPoint) / p.fps;
-      if (el.paused || Math.abs(el.currentTime - t) > 0.3) {
+      if (el.paused) {
         el.currentTime = t;
+        this.lastSeek.set(c.id, now);
         void el.play().catch(() => {});
+      } else if (c.id !== this.clockId && Math.abs(el.currentTime - t) > 0.35 && now - (this.lastSeek.get(c.id) ?? 0) > 1000) {
+        // ponytail: 1s cooldown between corrective seeks; a seek stalls WebKit decoding briefly
+        el.currentTime = t;
+        this.lastSeek.set(c.id, now);
       }
     }
+  }
+
+  /** The media element the timeline follows while playing: a ready, playing video (else audio). */
+  private clockClip(p: Project, frame: number): Clip | null {
+    const ready = (c: Clip) => {
+      const el = this.els.get(c.id);
+      return el instanceof HTMLMediaElement && !el.paused && el.readyState >= 3 && !el.ended;
+    };
+    const active = this.active(p, frame).filter((c) => {
+      const a = p.assets[c.assetId];
+      const t = p.tracks.find((t) => t.id === c.trackId);
+      return a && t && !t.muted && (a.kind === "video" || a.kind === "audio") && ready(c);
+    });
+    const current = active.find((c) => c.id === this.clockId);
+    if (current) return current;
+    const pick = active.find((c) => p.assets[c.assetId].kind === "video") ?? active[0] ?? null;
+    this.clockId = pick?.id ?? null;
+    return pick;
   }
 
   play(p: Project, frame: number) {
@@ -120,25 +146,44 @@ export class Player {
     this.playing = true;
     this.t0 = performance.now();
     this.f0 = frame;
+    this.clockId = null;
+    let last = -1;
     const loop = () => {
       const p2 = this.last?.p ?? p;
+      const now = performance.now();
       const end = projectEnd(p2);
-      let fr = this.f0 + Math.floor(((performance.now() - this.t0) * p2.fps) / 1000);
+      const clock = this.clockClip(p2, Math.max(last, this.f0));
+      let fr: number;
+      if (clock) {
+        const el = this.els.get(clock.id) as HTMLMediaElement;
+        fr = Math.max(this.f0, clock.start + Math.floor((el.currentTime - clock.inPoint / p2.fps) * p2.fps));
+        // re-anchor the wall clock so time stays continuous when this clip ends
+        this.f0 = fr;
+        this.t0 = now;
+      } else {
+        fr = this.f0 + Math.floor(((now - this.t0) * p2.fps) / 1000);
+      }
       if (fr >= end) {
         fr = end;
         this.pause();
-      } else {
-        this.sync(p2, fr);
-        this.raf = requestAnimationFrame(loop);
+        this.render(p2, fr);
+        this.onFrame?.(fr);
+        return;
       }
-      this.render(p2, fr);
-      this.onFrame?.(fr);
+      this.sync(p2, fr, now);
+      if (fr !== last) {
+        last = fr;
+        this.render(p2, fr);
+        this.onFrame?.(fr);
+      }
+      this.raf = requestAnimationFrame(loop);
     };
     loop();
   }
 
   pause() {
     this.playing = false;
+    this.clockId = null;
     cancelAnimationFrame(this.raf);
     for (const el of this.els.values()) if (el instanceof HTMLMediaElement && !el.paused) el.pause();
   }

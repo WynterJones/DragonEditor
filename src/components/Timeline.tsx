@@ -3,6 +3,7 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { Lock, LockOpen, Plus, Scissors, Type, Volume2, VolumeX, ZoomIn, ZoomOut } from "lucide-react";
 import { addText } from "@/lib/text";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { addTrack, moveClip, projectEnd, splitAtPlayhead, trackClips, trimClip, useStore } from "@/store";
 import type { Asset, Clip, Project, Track } from "@/types";
@@ -145,13 +146,21 @@ export default function Timeline() {
           <Type /> Text
         </Button>
         <div className="mx-2 h-4 w-px bg-border" />
-        <Button variant="ghost" size="xs" onClick={splitAtPlayhead} title="Split at playhead (S)">
+        <Button variant="ghost" size="xs" onClick={splitAtPlayhead} disabled={!selection.length} title="Split selected clips at playhead (S)">
           <Scissors /> Split
         </Button>
         <div className="flex-1" />
         <Button variant="ghost" size="icon-xs" onClick={() => setUI({ zoom: Math.max(zoom / 1.4, 0.05) })}>
           <ZoomOut />
         </Button>
+        <Slider
+          className="w-36"
+          value={[Math.log(zoom)]}
+          min={Math.log(0.05)}
+          max={Math.log(40)}
+          step={0.01}
+          onValueChange={(v) => setUI({ zoom: Math.exp(Array.isArray(v) ? v[0] : (v as number)) })}
+        />
         <Button variant="ghost" size="icon-xs" onClick={() => setUI({ zoom: Math.min(zoom * 1.4, 40) })}>
           <ZoomIn />
         </Button>
