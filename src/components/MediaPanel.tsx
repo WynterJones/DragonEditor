@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { FileAudio, Film, Image as ImageIcon, Mic, Plus, Trash2, Type } from "lucide-react";
+import { FileAudio, Film, Image as ImageIcon, Loader2, Mic, Plus, Sparkles, Trash2, Type } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { api } from "@/lib/tauri";
+import { generateImage } from "@/lib/generate";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -15,7 +18,28 @@ export default function MediaPanel() {
   const project = useStore((s) => s.project)!;
   const update = useStore((s) => s.update);
   const [busy, setBusy] = useState(false);
-  const assets = Object.values(project.assets).filter((a) => !a.voice && !a.gen && a.kind !== "text");
+  const assets = Object.values(project.assets).filter((a) => !a.voice && a.kind !== "text" && !(a.gen && a.kind === "audio"));
+  const [canImage, setCanImage] = useState(false);
+  const [imgPrompt, setImgPrompt] = useState("");
+  const [imgBusy, setImgBusy] = useState(false);
+  useEffect(() => {
+    api.aiProviders().then((p) => setCanImage(p.includes("codex")));
+  }, []);
+
+  const makeImage = async () => {
+    const prompt = imgPrompt.trim();
+    if (!prompt) return;
+    setImgBusy(true);
+    try {
+      await generateImage(prompt);
+      setImgPrompt("");
+      toast.success("Image added to the library");
+    } catch (e) {
+      toast.error(String(e), { duration: 10000 });
+    } finally {
+      setImgBusy(false);
+    }
+  };
 
   const pick = async () => {
     const files = await open({ multiple: true, filters: [{ name: "Media", extensions: ALL_EXT }] });
@@ -41,6 +65,14 @@ export default function MediaPanel() {
           <Plus /> {busy ? "Importing…" : "Import media"}
         </Button>
       </div>
+      {canImage && (
+        <div className="mx-3 mb-2 grid gap-1.5 rounded-md border bg-[var(--surface-2)] p-2">
+          <Textarea value={imgPrompt} onChange={(e) => setImgPrompt(e.target.value)} placeholder="Generate an image… (via Codex)" className="min-h-9 resize-none border-0 bg-transparent p-1 text-xs shadow-none focus-visible:ring-0" rows={2} onKeyDown={(e) => e.key === "Enter" && (e.metaKey || e.ctrlKey) && makeImage()} />
+          <Button size="xs" variant="secondary" onClick={makeImage} disabled={imgBusy || !imgPrompt.trim()}>
+            {imgBusy ? <Loader2 className="animate-spin" /> : <Sparkles />} {imgBusy ? "Generating (~40s)…" : "Generate image"}
+          </Button>
+        </div>
+      )}
       <ScrollArea className="min-h-0 flex-1">
         {assets.length === 0 ? (
           <p className="px-4 py-10 text-center text-xs leading-relaxed text-muted-foreground">

@@ -46,6 +46,7 @@ pub fn run() {
             eleven::eleven_audio,
             ai::ai_providers,
             ai::ai_chat,
+            ai::ai_image,
             media::probe,
             media::thumbnail,
             media::peaks,

@@ -32,7 +32,7 @@ export interface Asset {
   thumb?: string;
   peaks?: number[];
   voice?: { text: string; voiceId: string; modelId: string };
-  gen?: { kind: "music" | "sfx"; prompt: string };
+  gen?: { kind: "music" | "sfx" | "image"; prompt: string };
   /** kind === "text": width/height are the measured block size at scale 1 */
   text?: TextStyle;
 }
@@ -100,7 +100,7 @@ export interface VoiceSettings {
   speakerBoost: boolean;
 }
 
-export type BeatKind = "voice" | "sfx" | "music" | "text" | "note";
+export type BeatKind = "voice" | "sfx" | "music" | "image" | "text" | "note";
 export interface Beat {
   id: string;
   kind: BeatKind;

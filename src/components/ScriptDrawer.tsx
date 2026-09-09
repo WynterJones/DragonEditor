@@ -7,8 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/tauri";
-import { addText, generateAudio, placeAsset, trackEnd, trackFor } from "@/lib/generate";
-import { id, useStore } from "@/store";
+import { addText, generateAudio, generateImage, placeAsset, trackEnd, trackFor } from "@/lib/generate";
+import { addClip, id, useStore } from "@/store";
 import type { Beat, BeatKind } from "@/types";
 
 const SYSTEM = `You are the script writer inside DragonEditor, a video editor with AI narration (ElevenLabs), generated sound effects and music.
@@ -17,12 +17,14 @@ When asked for a script, write it as short BEATS, one per line, each prefixed wi
 [VOICE] one or two spoken sentences of narration — sent to text-to-speech verbatim, so no stage directions
 [SFX] a short sound-effect description, e.g. "soft whoosh transition"
 [TEXT] short on-screen text
-Rules: VOICE beats under 25 words; ~150 words of narration per minute of requested length; alternate VOICE with occasional SFX/TEXT; no headings, markdown, numbering or commentary — only tagged lines. If the user is just chatting, answer normally without tags.`;
+{IMAGE}Rules: VOICE beats under 25 words; ~150 words of narration per minute of requested length; alternate VOICE with occasional SFX/TEXT; no headings, markdown, numbering or commentary — only tagged lines. If the user is just chatting, answer normally without tags.`;
+const IMAGE_LINE = "[IMAGE] a visual description of the shot to generate (a still image behind the narration)\n";
 
 const KINDS: Record<BeatKind, { label: string; color: string }> = {
   voice: { label: "Voice", color: "text-emerald-300" },
   sfx: { label: "SFX", color: "text-teal-300" },
   music: { label: "Music", color: "text-primary" },
+  image: { label: "Image", color: "text-sky-300" },
   text: { label: "Text", color: "text-violet-300" },
   note: { label: "Note", color: "text-muted-foreground" },
 };
@@ -30,7 +32,7 @@ const KINDS: Record<BeatKind, { label: string; color: string }> = {
 export function parseBeats(text: string): Beat[] {
   const beats: Beat[] = [];
   for (const line of text.split("\n")) {
-    const m = line.match(/^\s*\[?(VOICE|SFX|MUSIC|TEXT|NOTE)\]?\s*[:\-–]?\s*(.+?)\s*$/i);
+    const m = line.match(/^\s*\[?(VOICE|SFX|MUSIC|IMAGE|TEXT|NOTE)\]?\s*[:\-–]?\s*(.+?)\s*$/i);
     if (m) beats.push({ id: id(), kind: m[1].toLowerCase() as BeatKind, text: m[2].replace(/^["“]|["”]$/g, "") });
   }
   return beats;
@@ -72,7 +74,8 @@ export default function ScriptDrawer({ open, onClose }: { open: boolean; onClose
     try {
       const chat = useStore.getState().project!.script.chat;
       const transcript = chat.map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.text}`).join("\n\n");
-      const reply = await api.aiChat(script.provider, `${SYSTEM}\n\n${transcript}\n\nAssistant:`, project.dir);
+      const system = SYSTEM.replace("{IMAGE}", providers.includes("codex") ? IMAGE_LINE : "");
+      const reply = await api.aiChat(script.provider, `${system}\n\n${transcript}\n\nAssistant:`, project.dir);
       update((p) => {
         p.script.chat.push({ role: "assistant", text: reply });
       });
@@ -108,6 +111,17 @@ export default function ScriptDrawer({ open, onClose }: { open: boolean; onClose
     if (b.kind === "note") return;
     if (b.kind === "text") {
       addText(b.text, pos);
+      return;
+    }
+    if (b.kind === "image") {
+      let aid = b.assetId && s.project!.assets[b.assetId] ? b.assetId : undefined;
+      if (!aid) {
+        aid = (await generateImage(b.text)).id;
+        editBeat(b.id, { assetId: aid });
+      }
+      const p = useStore.getState().project!;
+      const track = p.tracks.find((t) => t.kind === "video" && !t.locked);
+      if (track) addClip(aid, track.id, pos);
       return;
     }
     let assetId = b.assetId && s.project!.assets[b.assetId] ? b.assetId : undefined;
@@ -309,7 +323,7 @@ function BeatText({ text }: { text: string }) {
   return (
     <>
       {text.split("\n").map((line, i) => {
-        const m = line.match(/^\s*\[?(VOICE|SFX|MUSIC|TEXT|NOTE)\]?\s*[:\-–]?\s*(.*)$/i);
+        const m = line.match(/^\s*\[?(VOICE|SFX|MUSIC|IMAGE|TEXT|NOTE)\]?\s*[:\-–]?\s*(.*)$/i);
         if (!m) return <div key={i}>{line}</div>;
         const k = m[1].toLowerCase() as BeatKind;
         return (

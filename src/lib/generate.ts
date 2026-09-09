@@ -49,6 +49,21 @@ export function trackEnd(trackId: string) {
   return trackClips(p, trackId).reduce((m, c) => Math.max(m, c.start + c.duration), 0);
 }
 
+/** Generates an image with the Codex CLI's image tool and imports it into the library. */
+export async function generateImage(prompt: string): Promise<Asset> {
+  const p = useStore.getState().project!;
+  const aspect = p.width > p.height ? "wide 16:9 landscape" : p.width < p.height ? "tall 9:16 portrait" : "square";
+  const aid = id();
+  const out = `${p.dir}/assets/img-${aid}.png`;
+  await api.aiImage(`${prompt}. Aspect ratio: ${aspect}. No text or watermarks.`, out);
+  const asset = await describe(p, aid, "image", prompt.slice(0, 60), out);
+  asset.gen = { kind: "image", prompt };
+  useStore.getState().update((p) => {
+    p.assets[asset.id] = asset;
+  });
+  return asset;
+}
+
 export function placeAsset(assetId: string, kind: Kind, at: number) {
   return addClip(assetId, trackFor(kind), at);
 }

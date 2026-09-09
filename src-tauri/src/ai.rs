@@ -80,3 +80,52 @@ pub async fn ai_chat(app: AppHandle, provider: String, prompt: String, cwd: Stri
     let v: serde_json::Value = serde_json::from_str(&stdout).unwrap_or_default();
     Ok(v["result"].as_str().map(|s| s.trim().to_string()).unwrap_or(stdout))
 }
+
+/// Generates an image with Codex's image tool and copies it to `out_path`.
+/// Codex writes generated images under ~/.codex/generated_images; we pick the newest one
+/// created after the call started rather than fighting its read-only sandbox.
+#[tauri::command]
+pub async fn ai_image(app: AppHandle, prompt: String, out_path: String) -> Result<(), String> {
+    let bin = find("codex").ok_or("Codex CLI is not installed")?;
+    let started = std::time::SystemTime::now();
+    let full = format!(
+        "Use your image generation tool to generate exactly one image: {prompt}\n\
+         Do not run shell commands, do not save, copy or resize files. When the image is generated, reply with the single word: done"
+    );
+    let out = app
+        .shell()
+        .command(bin)
+        .args(["exec", "--skip-git-repo-check", &full])
+        .env("PATH", path_env())
+        .current_dir(std::env::temp_dir())
+        .output()
+        .await
+        .map_err(|e| e.to_string())?;
+    let home = std::env::var("HOME").map(PathBuf::from).unwrap_or_default();
+    let mut newest: Option<(std::time::SystemTime, PathBuf)> = None;
+    if let Ok(sessions) = std::fs::read_dir(home.join(".codex/generated_images")) {
+        for s in sessions.flatten() {
+            let Ok(files) = std::fs::read_dir(s.path()) else { continue };
+            for f in files.flatten() {
+                let p = f.path();
+                if p.extension().and_then(|e| e.to_str()) != Some("png") {
+                    continue;
+                }
+                let Ok(m) = f.metadata().and_then(|m| m.modified()) else { continue };
+                if m >= started && newest.as_ref().is_none_or(|(t, _)| m > *t) {
+                    newest = Some((m, p));
+                }
+            }
+        }
+    }
+    match newest {
+        Some((_, p)) => {
+            std::fs::copy(&p, &out_path).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        None => Err(format!(
+            "Codex didn't produce an image. {}",
+            String::from_utf8_lossy(if out.stdout.is_empty() { &out.stderr } else { &out.stdout }).trim()
+        )),
+    }
+}
